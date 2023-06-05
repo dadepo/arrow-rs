@@ -16,7 +16,10 @@
 // under the License.
 
 use crate::array::{get_offsets, print_long_array};
-use crate::{make_array, Array, ArrayRef, ListArray, StringArray, StructArray};
+use crate::iterator::MapArrayIter;
+use crate::{
+    make_array, Array, ArrayAccessor, ArrayRef, ListArray, StringArray, StructArray,
+};
 use arrow_buffer::{ArrowNativeType, Buffer, NullBuffer, OffsetBuffer, ToByteSlice};
 use arrow_data::{ArrayData, ArrayDataBuilder};
 use arrow_schema::{ArrowError, DataType, Field};
@@ -115,6 +118,22 @@ impl MapArray {
             entries: self.entries.clone(),
             value_offsets: self.value_offsets.slice(offset, length),
         }
+    }
+    /// constructs a new iterator
+    pub fn iter(&self) -> MapArrayIter<'_> {
+        MapArrayIter::new(self)
+    }
+}
+
+impl<'a> ArrayAccessor for &'a MapArray {
+    type Item = ArrayRef;
+
+    fn value(&self, index: usize) -> Self::Item {
+        Arc::new(MapArray::value(self, index)) as ArrayRef
+    }
+
+    unsafe fn value_unchecked(&self, index: usize) -> Self::Item {
+        Arc::new(MapArray::value(self, index)) as ArrayRef
     }
 }
 
